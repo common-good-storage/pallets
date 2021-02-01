@@ -1,0 +1,3 @@
+[workspace]
+members = [ "pallet-power", "pallet-miner" ]
+

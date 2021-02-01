@@ -1,0 +1,35 @@
+[package]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+name = "pallet-miner"
+description = "Pallet for Miner Actor"
+version = "0.1.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies.codec]
+default-features = false
+features = ["derive"]
+package = "parity-scale-codec"
+version = "1.3.4"
+
+[dependencies]
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063"}
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+
+[dev-dependencies]
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+serde = { version = "1.0.101" }
+
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "frame-support/std",
+    "frame-system/std",
+]
