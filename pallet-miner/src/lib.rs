@@ -38,13 +38,11 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
-		// Placeholder
-        MinerCreated(T::AccountId),
+        PlaceholderEvent(T::AccountId),
     }
 
     #[pallet::error]
     pub enum Error<T> {
-		// Placeholder
         NoneValue,
     }
 

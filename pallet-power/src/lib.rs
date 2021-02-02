@@ -31,22 +31,14 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
     #[pallet::storage]
-    #[pallet::getter(fn claims)]
-    pub type Claims<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Claim>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn miner_count)]
-    pub type MinerCount<T: Config> = StorageValue<_, u64>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn total_raw_bytes_power)]
-    pub type TotalRawBytesPower<T: Config> = StorageValue<_, u64>;
+    #[pallet::getter(fn placeholder)]
+    pub type Placeholder<T: Config> = StorageValue<_, u64>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
-        MinerCreated(T::AccountId),
+        PlaceholderEvent(T::AccountId),
     }
 
     #[pallet::error]
@@ -56,47 +48,10 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(1000000)]
-        pub(super) fn create_miner(
-            origin: OriginFor<T>,
-            params: CreateMinerParams<T::AccountId>,
-        ) -> DispatchResultWithPostInfo {
-            // currently a signed origin, any signed
-            // Miner::new()
-            // Set Claim with compact encoding
-            // UpdateStates - MinerCount, MinerAboveMinPower
-            // Return Miner address
-            // Emit an event.
-            // Return a successful DispatchResult
-            unimplemented!()
-        }
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResultWithPostInfo {
+			unimplemented!()
+		}
     }
 }
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
-pub struct CreateMinerParams<AccountId: Encode + Decode + Clone + Debug + Eq + PartialEq> {
-    /// Owner of the Miner Account
-    owner: AccountId,
-    /// Worker of the Miner Account
-    worker: AccountId,
-    ///  Placeholder for window PoSt proof type
-    window_post_proof_type: u64,
-    ///  PeerID of the miner
-    peer: Vec<u8>,
-    /// Multiaddress of the miner to connect to it
-    multiaddrs: Vec<u8>,
-}
-
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
-pub struct Claim {
-    /// Placeholder: Window PoSt Proof Type
-    window_post_proof_type: u64,
-    /// Raw Bytes Stored by the miner
-    raw_bytes_power: u32,
-    /// Quality Adjusted Power
-    ///
-    /// This is the raw bytes * Sector Quality Multiplier
-    ///
-    /// https://spec.filecoin.io/#section-glossary.quality-adjusted-power
-    quality_adjusted_power: u32,
-}
