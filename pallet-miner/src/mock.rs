@@ -54,6 +54,7 @@ impl system::Config for Test {
 
 impl pallet_miner::Config for Test {
     type Event = Event;
+	type BlockNumber = u64;
 }
 
 // Build genesis storage according to the mock runtime.

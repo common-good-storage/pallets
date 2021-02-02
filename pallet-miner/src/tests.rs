@@ -3,6 +3,6 @@ use crate::mock::*;
 #[test]
 fn it_works_for_default_value() {
     new_test_ext().execute_with(|| {
-        assert_eq!(Miner::placeholder(), None);
+        assert_eq!(Miner::miner_index(), None);
     });
 }

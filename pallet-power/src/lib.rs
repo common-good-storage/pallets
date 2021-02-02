@@ -8,7 +8,7 @@ mod mock;
 
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
-use sp_std::{fmt::Debug, prelude::*};
+use pallet_common::{Multiaddress, PeerId};
 
 pub use pallet::*;
 
@@ -31,14 +31,22 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
     #[pallet::storage]
-    #[pallet::getter(fn placeholder)]
-    pub type Placeholder<T: Config> = StorageValue<_, u64>;
+    #[pallet::getter(fn claims)]
+    pub type Claims<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Claim>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn miner_count)]
+    pub type MinerCount<T: Config> = StorageValue<_, u64>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn total_raw_bytes_power)]
+    pub type TotalRawBytesPower<T: Config> = StorageValue<_, u64>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
-        PlaceholderEvent(T::AccountId),
+        MinerCreated(T::AccountId),
     }
 
     #[pallet::error]
@@ -48,10 +56,32 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResultWithPostInfo {
-			unimplemented!()
-		}
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub(super) fn create_miner(
+            origin: OriginFor<T>,
+            owner: T::AccountId,
+            worker: T::AccountId,
+            peer_id: PeerId,
+            multiaddrs: Vec<Multiaddress>,
+        ) -> DispatchResultWithPostInfo {
+            // currently a signed origin, any signed
+            // Miner::new()
+            // Set Claim with compact encoding
+            // UpdateStates - MinerCount
+            // Return Miner address
+            // Emit an event.
+            // Return a successful DispatchResult
+            unimplemented!()
+        }
     }
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
+pub struct Claim {
+    /// Raw Bytes Stored by the miner
+    raw_bytes_power: u32,
+    /// Quality Adjusted Power
+    /// This is the raw bytes * Sector Quality Multiplier (when committing storage)
+    /// It is equal to raw_bytes_power for now
+    quality_adjusted_power: u32,
+}
