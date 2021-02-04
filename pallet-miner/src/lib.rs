@@ -83,6 +83,7 @@ pub mod pallet {
             // Power::register_new_miner()
             // Add miner to Miners
             // Return Miner address
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L97
             unimplemented!()
         }
 
@@ -97,6 +98,7 @@ pub mod pallet {
             // ChangeWorkerAddress will ALWAYS overwrite the existing control addresses with the control addresses passed in the params.
             // If a None is passed, the control addresses will be cleared.
             // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L225
             unimplemented!()
         }
 
@@ -107,6 +109,7 @@ pub mod pallet {
             miner: T::AccountId,
             new_peer_id: <T as Config>::PeerId,
         ) -> DispatchResultWithPostInfo {
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L266
             unimplemented!()
         }
 
@@ -118,6 +121,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // triggers a change in new worker key if it was previously set and the activation time
             // has arrived
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L205
             unimplemented!()
         }
 
@@ -133,6 +137,7 @@ pub mod pallet {
             // current owner address, revokes any existing proposal.
             // If invoked by the previously proposed address, with the same proposal, changes the current owner address to be
             // that proposed address.
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L224
             unimplemented!()
         }
     }
@@ -154,9 +159,9 @@ pub struct MinerInfo<
     /// Miner's libp2p PeerId
     peer_id: PeerId,
     /// Update to this worker address to at defined time  
-    pending_worker: WorkerKeyChange<AccountId, BlockNumber>,
+    pending_worker: Option<WorkerKeyChange<AccountId, BlockNumber>>,
     /// Update to this owner address when it confirms
-    pending_owner: AccountId,
+    pending_owner: Option<AccountId>,
 }
 
 #[derive(Encode, Decode)]

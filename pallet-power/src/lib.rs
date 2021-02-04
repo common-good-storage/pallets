@@ -73,6 +73,7 @@ impl<T: Config> Power for Pallet<T> {
         worker: T::AccountId,
         peer_id: Self::PeerId,
     ) -> Option<Claim<Self::StoragePower>> {
+        // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L103
         unimplemented!()
     }
 
@@ -81,6 +82,7 @@ impl<T: Config> Power for Pallet<T> {
         raw_bytes_delta: Self::StoragePower,
         quality_adjusted_delta: Self::StoragePower,
     ) -> Option<Claim<Self::StoragePower>> {
+        // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L161
         unimplemented!()
     }
 }
