@@ -7,7 +7,7 @@ mod tests;
 mod mock;
 
 use codec::{Decode, Encode};
-use pallet_common::{Multiaddress, PeerId};
+use pallet_common::Power;
 
 pub use pallet::*;
 
@@ -21,6 +21,8 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type BlockNumber: Parameter + Member + Clone + Eq + PartialEq;
+        type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;
+        type Power: Power;
     }
 
     #[pallet::pallet]
@@ -36,7 +38,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         T::AccountId,
-        MinerInfo<T::AccountId, <T as pallet::Config>::BlockNumber>,
+        MinerInfo<T::AccountId, <T as pallet::Config>::BlockNumber, T::PeerId>,
     >;
 
     #[pallet::storage]
@@ -47,7 +49,18 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
-        PlaceholderEvent(T::AccountId),
+        /// Emits new miner address
+        MinerCreated(T::AccountId),
+        /// Emits miner address and requested change in worker address
+        WorkerChangeRequested(T::AccountId, T::AccountId),
+        /// Emits miner address and new worker address
+        WorkerChanged(T::AccountId, T::AccountId),
+        /// Emits miner address and new worker address to update to
+        PeerIdChanged(T::AccountId, T::AccountId),
+        /// Emits miner address and new owner address to update to
+        OwnerChangeRequested(T::AccountId, T::AccountId),
+        /// Emits miner address and new owner address
+        OwnerChanged(T::AccountId, T::AccountId),
     }
 
     #[pallet::error]
@@ -57,7 +70,23 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-		// Benchmark not accurate
+        // Benchmark not accurate
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn create(
+            origin: OriginFor<T>,
+            owner: T::AccountId,
+            worker: T::AccountId,
+            peer_id: T::PeerId,
+        ) -> DispatchResultWithPostInfo {
+            // checkadd MinerIndex
+            // Assign new Miner addr
+            // Power::register_new_miner()
+            // Add miner to Miners
+            // Return Miner address
+            unimplemented!()
+        }
+
+        // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_worker_address(
             origin: OriginFor<T>,
@@ -71,27 +100,17 @@ pub mod pallet {
             unimplemented!()
         }
 
-		// Benchmark not accurate
+        // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
             origin: OriginFor<T>,
             miner: T::AccountId,
-            new_peer_id: PeerId,
+            new_peer_id: <T as Config>::PeerId,
         ) -> DispatchResultWithPostInfo {
             unimplemented!()
         }
 
-		// Benchmark not accurate
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn change_multiaddress(
-            origin: OriginFor<T>,
-            miner: T::AccountId,
-            new_multiaddresses: Vec<Multiaddress>,
-        ) -> DispatchResultWithPostInfo {
-            unimplemented!()
-        }
-
-		// Benchmark not accurate
+        // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn confirm_update_worker_key(
             origin: OriginFor<T>,
@@ -102,7 +121,7 @@ pub mod pallet {
             unimplemented!()
         }
 
-		// Benchmark not accurate
+        // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_owner_address(
             origin: OriginFor<T>,
@@ -119,25 +138,11 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> Pallet<T> {
-    pub fn new(
-        owner: T::AccountId,
-        worker: T::AccountId,
-        peer_id: PeerId,
-        multiaddrs: Vec<Multiaddress>,
-    ) -> Result<T::AccountId, Error<T>> {
-        // checkadd MinerIndex
-        // Assign new Miner addr
-        // Add miner to Miners
-        // Return Miner address
-        unimplemented!()
-    }
-}
-
 #[derive(Encode, Decode)]
 pub struct MinerInfo<
     AccountId: Encode + Decode + Eq + PartialEq,
     BlockNumber: Encode + Decode + Eq + PartialEq,
+    PeerId: Encode + Decode + Eq + PartialEq,
 > {
     /// Owner of this Miner
     owner: AccountId,
@@ -148,8 +153,6 @@ pub struct MinerInfo<
     controllers: Option<Vec<AccountId>>,
     /// Miner's libp2p PeerId
     peer_id: PeerId,
-    /// Multiaddresses to establish connections with the miner
-    multiaddrs: Vec<Multiaddress>,
     /// Update to this worker address to at defined time  
     pending_worker: WorkerKeyChange<AccountId, BlockNumber>,
     /// Update to this owner address when it confirms
@@ -161,8 +164,8 @@ pub struct WorkerKeyChange<
     AccountId: Encode + Decode + Eq + PartialEq,
     BlockNumber: Encode + Decode + Eq + PartialEq,
 > {
-	/// New Worker Address to be updated
+    /// New Worker Address to be updated
     new_worker: AccountId,
-	/// Time after which confirm_update_worker_key will trigger updates to MinerInfo
+    /// Time after which confirm_update_worker_key will trigger updates to MinerInfo
     effective_at: BlockNumber,
 }
