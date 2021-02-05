@@ -6,9 +6,9 @@ license = "Unlicense"
 description = "Common types and traits for Actors"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "1.3.6", default-features = false, features = ["derive"] }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
 
 [features]
 default = ['std']

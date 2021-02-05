@@ -9,7 +9,8 @@ mod mock;
 use codec::{Decode, Encode};
 use pallet_common::Power;
 
-pub use pallet::*;
+// `pallet::Module` is created by `pallet` macro
+pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -84,6 +85,8 @@ pub mod pallet {
             // Add miner to Miners
             // Return Miner address
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L97
+            // Note: This replaces the external call to the power actor and register the miner
+            // claims with `Power::register_new_miner` method
             unimplemented!()
         }
 

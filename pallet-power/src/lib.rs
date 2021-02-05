@@ -8,7 +8,8 @@ mod mock;
 
 use pallet_common::{Claim, Power};
 
-pub use pallet::*;
+// `pallet::Module` is created by `pallet` macro
+pub use pallet::{Claims, Config, MinerCount, Module, Pallet, TotalRawBytesPower};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -74,6 +75,8 @@ impl<T: Config> Power for Pallet<T> {
         peer_id: Self::PeerId,
     ) -> Option<Claim<Self::StoragePower>> {
         // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L103
+        // Note: Instead of external transactions to the power actor and instantiating a miner actor,
+        // this is called by the `Miner::create` method
         unimplemented!()
     }
 
