@@ -22,7 +22,7 @@ pub mod pallet {
         /// Libp2p Peer Identifier, usually array of bytes  
         type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;
         /// Unit used for recoding raw bytes and quality adjusted power
-        type StoragePower: Parameter + Member + Clone;
+        type StoragePower: Parameter + Member + Clone + Default;
     }
 
     #[pallet::pallet]
@@ -70,14 +70,17 @@ impl<T: Config> Power for Pallet<T> {
     type PeerId = T::PeerId;
 
     fn register_new_miner(
-        owner: T::AccountId,
-        worker: T::AccountId,
-        peer_id: Self::PeerId,
+        miner: &T::AccountId,
+        owner: &T::AccountId,
+        worker: &T::AccountId,
+        peer_id: &Self::PeerId,
     ) -> Option<Claim<Self::StoragePower>> {
         // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L103
         // Note: Instead of external transactions to the power actor and instantiating a miner actor,
         // this is called by the `Miner::create` method
-        unimplemented!()
+
+        // For testing only
+        Some(Claim::default())
     }
 
     fn update_claim(

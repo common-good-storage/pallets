@@ -15,6 +15,7 @@ package = "parity-scale-codec"
 version = "2.0.0"
 
 [dependencies]
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate"}
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate"}
@@ -23,7 +24,6 @@ pallet-common = { default-features = false, path = "../pallet-common" }
 [dev-dependencies]
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
 pallet-power = { default-features = false, path = "../pallet-power" }
 serde = { version = "1.0.101" }
 
@@ -35,4 +35,5 @@ std = [
     "frame-support/std",
     "frame-system/std",
     "pallet-common/std",
+    "sp-runtime/std",
 ]
