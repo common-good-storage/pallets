@@ -12,17 +12,19 @@ targets = ["x86_64-unknown-linux-gnu"]
 default-features = false
 features = ["derive"]
 package = "parity-scale-codec"
-version = "1.3.4"
+version = "2.0.0"
 
 [dependencies]
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063"}
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate"}
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate"}
+pallet-common = { default-features = false, path = "../pallet-common" }
 
 [dev-dependencies]
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", rev = "68d715719add5ed0473585f8ce38dd312a69a063" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
+pallet-power = { default-features = false, path = "../pallet-power" }
 serde = { version = "1.0.101" }
 
 
@@ -32,4 +34,5 @@ std = [
     "codec/std",
     "frame-support/std",
     "frame-system/std",
+    "pallet-common/std",
 ]

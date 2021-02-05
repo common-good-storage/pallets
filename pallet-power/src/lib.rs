@@ -6,11 +6,10 @@ mod tests;
 #[cfg(test)]
 mod mock;
 
-use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
-use sp_std::{fmt::Debug, prelude::*};
+use pallet_common::{Claim, Power};
 
-pub use pallet::*;
+// `pallet::Module` is created by `pallet` macro
+pub use pallet::{Claims, Config, MinerCount, Module, Pallet, TotalRawBytesPower};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -20,7 +19,10 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        /// Libp2p Peer Identifier, usually array of bytes  
+        type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;
+        /// Unit used for recoding raw bytes and quality adjusted power
+        type StoragePower: Parameter + Member + Clone;
     }
 
     #[pallet::pallet]
@@ -30,16 +32,21 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
+    /// Miners address mapped to their Claims on storage power
     #[pallet::storage]
-    #[pallet::getter(fn placeholder)]
-    pub type Placeholder<T: Config> = StorageValue<_, u64>;
+    #[pallet::getter(fn claims)]
+    pub type Claims<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, Claim<T::StoragePower>>;
 
-    #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    #[pallet::metadata(T::AccountId = "AccountId")]
-    pub enum Event<T: Config> {
-        PlaceholderEvent(T::AccountId),
-    }
+    /// Total Miner registered in the system
+    #[pallet::storage]
+    #[pallet::getter(fn miner_count)]
+    pub type MinerCount<T: Config> = StorageValue<_, u64>;
+
+    /// Total Power in Raw bytes declared in the system
+    #[pallet::storage]
+    #[pallet::getter(fn total_raw_bytes_power)]
+    pub type TotalRawBytesPower<T: Config> = StorageValue<_, u64>;
 
     #[pallet::error]
     pub enum Error<T> {
@@ -48,10 +55,37 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResultWithPostInfo {
-			unimplemented!()
-		}
+        /// This is a placeholder
+        /// `frame_support::pallet` macro require pallet::call but no call in this phase
+        #[pallet::weight(10_000)]
+        fn do_something(_: OriginFor<T>) -> DispatchResultWithPostInfo {
+            unimplemented!()
+        }
     }
 }
 
+impl<T: Config> Power for Pallet<T> {
+    type AccountId = T::AccountId;
+    type StoragePower = T::StoragePower;
+    type PeerId = T::PeerId;
+
+    fn register_new_miner(
+        owner: T::AccountId,
+        worker: T::AccountId,
+        peer_id: Self::PeerId,
+    ) -> Option<Claim<Self::StoragePower>> {
+        // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L103
+        // Note: Instead of external transactions to the power actor and instantiating a miner actor,
+        // this is called by the `Miner::create` method
+        unimplemented!()
+    }
+
+    fn update_claim(
+        miner: <T as frame_system::Config>::AccountId,
+        raw_bytes_delta: Self::StoragePower,
+        quality_adjusted_delta: Self::StoragePower,
+    ) -> Option<Claim<Self::StoragePower>> {
+        // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L161
+        unimplemented!()
+    }
+}

@@ -17,7 +17,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
         {
             System: frame_system::{Module, Call, Config, Storage, Event<T>},
-            Power: pallet_power::{Module, Call, Storage, Event<T>},
+            Power: pallet_power::{Module, Storage},
         }
 );
 
@@ -53,7 +53,8 @@ impl system::Config for Test {
 }
 
 impl pallet_power::Config for Test {
-    type Event = Event;
+    type PeerId = Vec<u8>;
+    type StoragePower = u128;
 }
 
 // Build genesis storage according to the mock runtime.

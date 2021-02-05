@@ -1,6 +1,7 @@
 use crate as pallet_miner;
 use frame_support::parameter_types;
 use frame_system as system;
+use pallet_power;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -17,6 +18,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
         {
             System: frame_system::{Module, Call, Config, Storage, Event<T>},
+            Power: pallet_power::{Module, Storage},
             Miner: pallet_miner::{Module, Call, Storage, Event<T>},
         }
 );
@@ -52,8 +54,16 @@ impl system::Config for Test {
     type SS58Prefix = SS58Prefix;
 }
 
+impl pallet_power::Config for Test {
+    type PeerId = Vec<u8>;
+    type StoragePower = u128;
+}
+
 impl pallet_miner::Config for Test {
     type Event = Event;
+    type BlockNumber = u64;
+    type PeerId = Vec<u8>;
+    type Power = Power;
 }
 
 // Build genesis storage according to the mock runtime.

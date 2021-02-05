@@ -1,0 +1,19 @@
+[package]
+edition = '2018'
+name = 'pallet-common'
+version = "0.1.0"
+license = "Unlicense"
+description = "Common types and traits for Actors"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
+
+[features]
+default = ['std']
+std = [
+	'codec/std',
+	'frame-support/std',
+	'sp-runtime/std'
+]
