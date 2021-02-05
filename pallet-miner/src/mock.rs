@@ -60,7 +60,6 @@ impl pallet_power::Config for Test {
 
 impl pallet_miner::Config for Test {
     type Event = Event;
-    type BlockNumber = u64;
     type Power = Power;
 }
 

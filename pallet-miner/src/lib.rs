@@ -24,7 +24,6 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        type BlockNumber: Parameter + Member + Clone + Eq + PartialEq;
         type Power: Power;
     }
 
@@ -54,8 +53,8 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Emits new miner address
         MinerCreated(MinerAccountId<T>),
-        /// Emits miner address and requested change in worker address
-        WorkerChangeRequested(MinerAccountId<T>, T::AccountId),
+        /// Emits miner address, requested change in worker address and controllers address update
+        WorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
         /// Emits miner address and new worker address
         WorkerChanged(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new PeerId to update to
@@ -70,6 +69,8 @@ pub mod pallet {
     pub enum Error<T> {
         Overflow,
         ClaimsNotSet,
+        NoSuchMiner,
+        InvalidSigner,
     }
 
     #[pallet::call]
@@ -116,16 +117,36 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_worker_address(
-            _origin: OriginFor<T>,
-            _miner: MinerAccountId<T>,
-            _new_worker: T::AccountId,
-            _new_controllers: Option<Vec<T::AccountId>>,
+            origin: OriginFor<T>,
+            miner: MinerAccountId<T>,
+            new_worker: T::AccountId,
+            new_controllers: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
+            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L225
             // ChangeWorkerAddress will ALWAYS overwrite the existing control addresses with the control addresses passed in the params.
             // If a None is passed, the control addresses will be cleared.
             // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
-            // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L225
-            unimplemented!()
+
+            let signer = ensure_signed(origin)?;
+            let mut miner_info =
+                Miners::<T>::try_get(&miner).map_err(|_| Error::<T>::NoSuchMiner)?;
+
+            ensure!(signer == miner_info.owner, Error::<T>::InvalidSigner);
+
+            miner_info.controllers = new_controllers;
+
+            miner_info.pending_worker = Some(WorkerKeyChange {
+                new_worker: new_worker.clone(),
+                effective_at: <frame_system::Module<T>>::block_number() + (5_u32).into(),
+            });
+
+            Self::deposit_event(Event::WorkerChangeRequested(
+                miner,
+                new_worker,
+                miner_info.controllers,
+            ));
+
+            Ok(().into())
         }
 
         // Benchmark not accurate
