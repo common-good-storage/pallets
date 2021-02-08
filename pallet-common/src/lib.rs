@@ -13,12 +13,7 @@ pub trait Power {
     type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;
 
     /// Register a miner - used by miner
-    fn register_new_miner(
-        miner: &Self::AccountId,
-        owner: &Self::AccountId,
-        worker: &Self::AccountId,
-        peer_id: &Self::PeerId,
-    ) -> Option<Claim<Self::StoragePower>>;
+    fn register_new_miner(miner: &Self::AccountId) -> Option<Claim<Self::StoragePower>>;
 
     /// Updates the claimed power for a miner, requested by miners
     /// Example: Worker recovers faulty sector and adds power back

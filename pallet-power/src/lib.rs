@@ -48,11 +48,6 @@ pub mod pallet {
     #[pallet::getter(fn total_raw_bytes_power)]
     pub type TotalRawBytesPower<T: Config> = StorageValue<_, u64>;
 
-    #[pallet::error]
-    pub enum Error<T> {
-        NoneValue,
-    }
-
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// This is a placeholder
@@ -69,18 +64,19 @@ impl<T: Config> Power for Pallet<T> {
     type StoragePower = T::StoragePower;
     type PeerId = T::PeerId;
 
-    fn register_new_miner(
-        miner: &T::AccountId,
-        owner: &T::AccountId,
-        worker: &T::AccountId,
-        peer_id: &Self::PeerId,
-    ) -> Option<Claim<Self::StoragePower>> {
+    fn register_new_miner(miner: &T::AccountId) -> Option<Claim<Self::StoragePower>> {
         // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L103
         // Note: Instead of external transactions to the power actor and instantiating a miner actor,
         // this is called by the `Miner::create` method
-
-        // For testing only
-        Some(Claim::default())
+        let miner_count = MinerCount::<T>::get().unwrap_or_default();
+        if let Some(new_miner_count) = miner_count.checked_add(1) {
+            let claim = Claim::default();
+            Claims::<T>::insert(miner, claim.clone());
+            MinerCount::<T>::put(new_miner_count);
+            Some(claim)
+        } else {
+            None
+        }
     }
 
     fn update_claim(

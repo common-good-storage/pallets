@@ -7,7 +7,7 @@ mod tests;
 mod mock;
 
 use codec::{Decode, Encode};
-use pallet_common::{AccountIdConversion, MinerId, Power};
+pub use pallet_common::{AccountIdConversion, MinerId, Power};
 
 // `pallet::Module` is created by `pallet` macro
 pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
@@ -93,8 +93,7 @@ pub mod pallet {
             let miner: AccountIdOf<T> = MinerId(miner_index).into_account();
             MinerIndex::<T>::put(miner_index);
 
-            T::Power::register_new_miner(&miner, &owner, &worker, &peer_id)
-                .ok_or(Error::<T>::ClaimsNotSet)?;
+            T::Power::register_new_miner(&miner).ok_or(Error::<T>::ClaimsNotSet)?;
 
             let miner_info = MinerInfo {
                 owner,
