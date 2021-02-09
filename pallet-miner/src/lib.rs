@@ -113,10 +113,10 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_worker_address(
-            origin: OriginFor<T>,
-            miner: AccountIdOf<T>,
-            new_worker: AccountIdOf<T>,
-            new_controllers: Option<Vec<AccountIdOf<T>>>,
+            _origin: OriginFor<T>,
+            _miner: AccountIdOf<T>,
+            _new_worker: AccountIdOf<T>,
+            _new_controllers: Option<Vec<AccountIdOf<T>>>,
         ) -> DispatchResultWithPostInfo {
             // ChangeWorkerAddress will ALWAYS overwrite the existing control addresses with the control addresses passed in the params.
             // If a None is passed, the control addresses will be cleared.
@@ -128,9 +128,9 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
-            origin: OriginFor<T>,
-            miner: AccountIdOf<T>,
-            new_peer_id: PeerId<T>,
+            _origin: OriginFor<T>,
+            _miner: AccountIdOf<T>,
+            _new_peer_id: PeerId<T>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L266
             unimplemented!()
@@ -139,8 +139,8 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn confirm_update_worker_key(
-            origin: OriginFor<T>,
-            miner: AccountIdOf<T>,
+            _origin: OriginFor<T>,
+            _miner: AccountIdOf<T>,
         ) -> DispatchResultWithPostInfo {
             // triggers a change in new worker key if it was previously set and the activation time
             // has arrived
@@ -151,9 +151,9 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_owner_address(
-            origin: OriginFor<T>,
-            miner: AccountIdOf<T>,
-            new_owner: AccountIdOf<T>,
+            _origin: OriginFor<T>,
+            _miner: AccountIdOf<T>,
+            _new_owner: AccountIdOf<T>,
         ) -> DispatchResultWithPostInfo {
             // Proposes or confirms a change of owner address.
             // If invoked by the current owner, proposes a new owner address for confirmation. If the proposed address is the
@@ -181,7 +181,7 @@ pub struct MinerInfo<
     controllers: Option<Vec<AccountId>>,
     /// Miner's libp2p PeerId
     peer_id: PeerId,
-    /// Update to this worker address to at defined time  
+    /// Update to this worker address to at defined time
     pending_worker: Option<WorkerKeyChange<AccountId, BlockNumber>>,
     /// Update to this owner address when it confirms
     pending_owner: Option<AccountId>,

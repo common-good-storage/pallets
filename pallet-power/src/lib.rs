@@ -19,7 +19,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Libp2p Peer Identifier, usually array of bytes  
+        /// Libp2p Peer Identifier, usually array of bytes
         type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;
         /// Unit used for recoding raw bytes and quality adjusted power
         type StoragePower: Parameter + Member + Clone + Default;
@@ -80,9 +80,9 @@ impl<T: Config> Power for Pallet<T> {
     }
 
     fn update_claim(
-        miner: <T as frame_system::Config>::AccountId,
-        raw_bytes_delta: Self::StoragePower,
-        quality_adjusted_delta: Self::StoragePower,
+        _miner: <T as frame_system::Config>::AccountId,
+        _raw_bytes_delta: Self::StoragePower,
+        _quality_adjusted_delta: Self::StoragePower,
     ) -> Option<Claim<Self::StoragePower>> {
         // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/power/power_actor.go#L161
         unimplemented!()
