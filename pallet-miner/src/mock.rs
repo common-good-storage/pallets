@@ -64,8 +64,6 @@ impl pallet_miner::Config for Test {
     type Power = Power;
 }
 
-pub type MinerEvent = pallet_miner::Event<Test>;
-
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
     system::GenesisConfig::default()
