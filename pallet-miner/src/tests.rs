@@ -1,4 +1,4 @@
-use crate::mock::*;
+use crate::mock::{new_test_ext, Miner, Origin, System, Test};
 use crate::{AccountIdConversion, MinerId};
 use frame_support::assert_ok;
 
