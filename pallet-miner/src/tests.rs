@@ -1,4 +1,5 @@
-use crate::mock::{new_test_ext, Miner, Origin, System, Test};
+// Imports created by construct_runtime macros are unresolved by rust analyzer
+use crate::mock::{new_test_ext, pallet_miner, Event, Miner, Origin, System, Test};
 use crate::{AccountIdConversion, MinerId};
 use frame_support::assert_ok;
 
@@ -10,7 +11,9 @@ fn it_creates_miner() {
         let peer_id = vec![1, 32];
         let expected_miner_index = 1;
 
-        // this needs to be set in order to read back the System::events later on, unsure why
+        // this needs to be set in order to read back the System::events later on, Events are not
+        // populated on genesis - unsure why
+        // https://github.com/paritytech/substrate/blob/master/frame/system/src/lib.rs#L1122
         System::set_block_number(1);
 
         assert_ok!(Miner::create(
@@ -30,13 +33,12 @@ fn it_creates_miner() {
         assert_eq!(new_miner_info.worker, worker);
         assert_eq!(new_miner_info.peer_id, peer_id);
         assert_eq!(System::event_count(), 1);
-        /*assert_eq!(
-            System::events(),
-            vec![frame_system::EventRecord {
-                phase: Phase::Initialization,
-                event: crate::Event::pallet_miner(crate::Event::MinerCreated(1590839634285)),
-                topics: []
-            }]
-        );*/
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::MinerCreated(new_miner_addr))
+        );
     });
 }

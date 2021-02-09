@@ -1,7 +1,6 @@
-use crate as pallet_miner;
+pub use crate as pallet_miner;
 use frame_support::parameter_types;
 use frame_system as system;
-use pallet_power;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -64,6 +63,8 @@ impl pallet_miner::Config for Test {
     type BlockNumber = u64;
     type Power = Power;
 }
+
+pub type MinerEvent = pallet_miner::Event<Test>;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
