@@ -10,6 +10,8 @@ fn it_creates_miner() {
         let peer_id = vec![1, 32];
         let expected_miner_index = 1;
 
+        System::set_block_number(1);
+
         assert_ok!(Miner::create(
             Origin::signed(1),
             owner,
@@ -26,5 +28,14 @@ fn it_creates_miner() {
         assert_eq!(new_miner_info.owner, owner);
         assert_eq!(new_miner_info.worker, worker);
         assert_eq!(new_miner_info.peer_id, peer_id);
+        assert_eq!(System::event_count(), 1);
+        /*assert_eq!(
+            System::events(),
+            vec![frame_system::EventRecord {
+                phase: Phase::Initialization,
+                event: crate::Event::pallet_miner(crate::Event::MinerCreated(1590839634285)),
+                topics: []
+            }]
+        );*/
     });
 }
