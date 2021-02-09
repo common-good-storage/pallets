@@ -10,6 +10,7 @@ fn it_creates_miner() {
         let peer_id = vec![1, 32];
         let expected_miner_index = 1;
 
+        // this needs to be set in order to read back the System::events later on, unsure why
         System::set_block_number(1);
 
         assert_ok!(Miner::create(
