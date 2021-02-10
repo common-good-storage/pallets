@@ -12,7 +12,7 @@ use pallet_common::{AccountIdConversion, MinerId, Power};
 // `pallet::Module` is created by `pallet` macro
 pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
 
-pub type AccountIdOf<T> = <<T as Config>::Power as Power>::AccountId;
+pub type MinerAccountId<T> = <<T as Config>::Power as Power>::AccountId;
 pub type PeerId<T> = <<T as Config>::Power as Power>::PeerId;
 
 #[frame_support::pallet]
@@ -41,8 +41,8 @@ pub mod pallet {
     pub type Miners<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
-        AccountIdOf<T>,
-        MinerInfo<AccountIdOf<T>, <T as pallet::Config>::BlockNumber, PeerId<T>>,
+        MinerAccountId<T>,
+        MinerInfo<T::AccountId, BlockNumberFor<T>, PeerId<T>>,
     >;
 
     #[pallet::storage]
@@ -51,20 +51,20 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    #[pallet::metadata(AccountIdOf<T> = "AccountId")]
+    #[pallet::metadata(MinerAccountId<T> = "MinerAccountId", T::AccountId = "AccountID", PeerId<T> = "PeerId")]
     pub enum Event<T: Config> {
         /// Emits new miner address
-        MinerCreated(AccountIdOf<T>),
+        MinerCreated(MinerAccountId<T>),
         /// Emits miner address and requested change in worker address
-        WorkerChangeRequested(AccountIdOf<T>, AccountIdOf<T>),
+        WorkerChangeRequested(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new worker address
-        WorkerChanged(AccountIdOf<T>, AccountIdOf<T>),
-        /// Emits miner address and new worker address to update to
-        PeerIdChanged(AccountIdOf<T>, AccountIdOf<T>),
+        WorkerChanged(MinerAccountId<T>, T::AccountId),
+        /// Emits miner address and new PeerId to update to
+        PeerIdChanged(MinerAccountId<T>, PeerId<T>),
         /// Emits miner address and new owner address to update to
-        OwnerChangeRequested(AccountIdOf<T>, AccountIdOf<T>),
+        OwnerChangeRequested(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new owner address
-        OwnerChanged(AccountIdOf<T>, AccountIdOf<T>),
+        OwnerChanged(MinerAccountId<T>, T::AccountId),
     }
 
     #[pallet::error]
@@ -79,8 +79,8 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn create(
             origin: OriginFor<T>,
-            owner: AccountIdOf<T>,
-            worker: AccountIdOf<T>,
+            owner: T::AccountId,
+            worker: T::AccountId,
             peer_id: PeerId<T>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L97
@@ -90,7 +90,7 @@ pub mod pallet {
 
             let mut miner_index = MinerIndex::<T>::get().unwrap_or_default();
             miner_index = miner_index.checked_add(1).ok_or(Error::<T>::Overflow)?;
-            let miner: AccountIdOf<T> = MinerId(miner_index).into_account();
+            let miner: MinerAccountId<T> = MinerId(miner_index).into_account();
             MinerIndex::<T>::put(miner_index);
 
             T::Power::register_new_miner(&miner).ok_or(Error::<T>::ClaimsNotSet)?;
@@ -114,9 +114,9 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_worker_address(
             _origin: OriginFor<T>,
-            _miner: AccountIdOf<T>,
-            _new_worker: AccountIdOf<T>,
-            _new_controllers: Option<Vec<AccountIdOf<T>>>,
+            _miner: MinerAccountId<T>,
+            _new_worker: T::AccountId,
+            _new_controllers: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // ChangeWorkerAddress will ALWAYS overwrite the existing control addresses with the control addresses passed in the params.
             // If a None is passed, the control addresses will be cleared.
@@ -129,7 +129,7 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
             _origin: OriginFor<T>,
-            _miner: AccountIdOf<T>,
+            _miner: MinerAccountId<T>,
             _new_peer_id: PeerId<T>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L266
@@ -140,7 +140,7 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn confirm_update_worker_key(
             _origin: OriginFor<T>,
-            _miner: AccountIdOf<T>,
+            _miner: MinerAccountId<T>,
         ) -> DispatchResultWithPostInfo {
             // triggers a change in new worker key if it was previously set and the activation time
             // has arrived
@@ -152,8 +152,8 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_owner_address(
             _origin: OriginFor<T>,
-            _miner: AccountIdOf<T>,
-            _new_owner: AccountIdOf<T>,
+            _miner: MinerAccountId<T>,
+            _new_owner: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             // Proposes or confirms a change of owner address.
             // If invoked by the current owner, proposes a new owner address for confirmation. If the proposed address is the
