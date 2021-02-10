@@ -1,5 +1,6 @@
 // Imports created by construct_runtime macros are unresolved by rust analyzer
-use crate::mock::{new_test_ext, pallet_miner, Event, Miner, Origin, System, Test};
+use crate as pallet_miner;
+use crate::mock::{new_test_ext, Event, Miner, Origin, System, Test};
 use crate::{AccountIdConversion, MinerId};
 use frame_support::assert_ok;
 

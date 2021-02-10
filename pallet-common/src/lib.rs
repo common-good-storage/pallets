@@ -7,7 +7,7 @@ use sp_runtime::traits::Member;
 pub trait Power {
     /// AccountId type for owner, worker, contorller and miner
     type AccountId: Parameter + Member + Clone + Eq + PartialEq + Default;
-    /// TODO compact type - bigInt?
+    /// Unit of Storage Power of a miner
     type StoragePower: Parameter + Member + Clone;
     /// Libp2p PeerId
     type PeerId: Parameter + Member + AsRef<[u8]> + Clone + Send + 'static;

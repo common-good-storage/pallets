@@ -7,7 +7,7 @@ mod tests;
 mod mock;
 
 use codec::{Decode, Encode};
-pub use pallet_common::{AccountIdConversion, MinerId, Power};
+use pallet_common::{AccountIdConversion, MinerId, Power};
 
 // `pallet::Module` is created by `pallet` macro
 pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
