@@ -5,7 +5,7 @@ use frame_support::{Parameter, RuntimeDebug};
 use sp_runtime::traits::Member;
 
 pub trait Power {
-    /// AccountId type for owner, worker, contorller and miner
+    /// AccountId type for miner
     type AccountId: Parameter + Member + Clone + Eq + PartialEq + Default;
     /// Unit of Storage Power of a miner
     type StoragePower: Parameter + Member + Clone;
@@ -69,7 +69,7 @@ impl<'a> codec::Input for TrailingZeroInput<'a> {
 }
 
 // Code modified from https://github.com/paritytech/polkadot/blob/rococo-v1/parachain/src/primitives.rs
-/// Format is b"miner" ++ encode(parachain ID) ++ 00.... where 00... is indefinite trailing
+/// Format is b"miner" ++ encode(minerId) ++ 00.... where 00... is indefinite trailing
 /// zeroes to fill AccountId.
 impl<T: Encode + Decode + Default> AccountIdConversion<T> for MinerId {
     fn into_account(&self) -> T {

@@ -5,7 +5,7 @@ use crate::{AccountIdConversion, MinerId};
 use frame_support::assert_ok;
 
 #[test]
-fn it_creates_miner() {
+fn create_miner() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 0;
         let worker: u64 = 1;
