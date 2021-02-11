@@ -1,7 +1,6 @@
 use crate as pallet_miner;
 use frame_support::parameter_types;
 use frame_system as system;
-use pallet_power;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -62,7 +61,6 @@ impl pallet_power::Config for Test {
 impl pallet_miner::Config for Test {
     type Event = Event;
     type BlockNumber = u64;
-    type PeerId = Vec<u8>;
     type Power = Power;
 }
 
