@@ -85,6 +85,10 @@ pub mod pallet {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L97
             // Note: This replaces the external call to the power actor and register the miner
             // claims with `Power::register_new_miner` method
+            //
+            // This allows signer to be accounts other than owner so potential services can be
+            // built to create miners for owners. Signer pays for the transaction costs and not
+            // value is staked by creating miner.
             ensure_signed(origin)?;
 
             let mut miner_index = MinerIndex::<T>::get().unwrap_or_default();
