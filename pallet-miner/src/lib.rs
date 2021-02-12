@@ -56,7 +56,6 @@ pub mod pallet {
         MinerCreated(MinerAccountId<T>),
         /// Emits miner address, requested change in worker address and controllers address update
         WorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
-        NoWorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
         /// Emits miner address and new worker address
         WorkerChanged(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new PeerId to update to

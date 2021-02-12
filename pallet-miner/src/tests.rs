@@ -18,6 +18,14 @@ fn create_miner_for(
 }
 
 #[test]
+fn first_miner_addr_is_correct() {
+    new_test_ext().execute_with(|| {
+        let new_miner_addr: <Test as frame_system::Config>::AccountId = MinerId(1).into_account();
+        assert_eq!(new_miner_addr, FIRST_MINER_ADDR);
+    })
+}
+
+#[test]
 fn create_miner() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 0;
