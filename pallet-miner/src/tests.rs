@@ -1,8 +1,21 @@
 // Imports created by construct_runtime macros are unresolved by rust analyzer
 use crate as pallet_miner;
 use crate::mock::{new_test_ext, Event, Miner, Origin, System, Test};
-use crate::{AccountIdConversion, MinerId};
-use frame_support::assert_ok;
+use crate::{AccountIdConversion, Error, MinerId};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResultWithPostInfo};
+
+const WORKER: u64 = 33;
+const PEERID_BYTE: u8 = 9;
+const FIRST_MINER_ADDR: u64 = 1590839634285;
+
+// Utility functions
+//
+// TODO: add genesis config in pallet and build test_ext with it
+fn create_miner_for(
+    owner: <Test as frame_system::Config>::AccountId,
+) -> DispatchResultWithPostInfo {
+    Miner::create(Origin::signed(1), owner, WORKER, vec![PEERID_BYTE])
+}
 
 #[test]
 fn create_miner() {
@@ -42,4 +55,182 @@ fn create_miner() {
             Event::pallet_miner(pallet_miner::Event::MinerCreated(new_miner_addr))
         );
     });
+}
+
+#[test]
+fn it_creates_worker_change_request_with_valid_signer_and_new_worker() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial block for events and calculation for effective_at
+        let block = 1;
+        System::set_block_number(block);
+
+        let new_worker: u64 = 99;
+        let new_controllers = Some(vec![1, 2, 3]);
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_worker,
+            new_controllers.clone()
+        ));
+
+        let miner_key_change = Miner::miners(FIRST_MINER_ADDR)
+            .unwrap()
+            .pending_worker
+            .unwrap();
+
+        assert_eq!(miner_key_change.new_worker, new_worker);
+        assert_eq!(
+            miner_key_change.effective_at,
+            block + <Test as pallet_miner::Config>::BlockDelay::get()
+        );
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::WorkerChangeRequested(
+                FIRST_MINER_ADDR,
+                new_worker,
+                new_controllers
+            ))
+        )
+    });
+}
+
+#[test]
+fn it_clears_worker_change_request_with_valid_signer_and_old_worker() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial pending_worker request
+        let new_worker: u64 = 99;
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_worker,
+            None
+        ));
+
+        // clears existing pending_worker request with existing worker
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            WORKER,
+            None
+        ));
+
+        assert!(Miner::miners(FIRST_MINER_ADDR)
+            .unwrap()
+            .pending_worker
+            .is_none());
+    })
+}
+
+#[test]
+fn it_rejects_worker_change_request_with_invalid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial block for events
+        System::set_block_number(1);
+
+        // set initial pending_worker request
+        let invalid_signer: u64 = 456;
+        assert_noop!(
+            Miner::change_worker_address(
+                Origin::signed(invalid_signer),
+                FIRST_MINER_ADDR,
+                WORKER,
+                None
+            ),
+            Error::<Test>::InvalidSigner
+        );
+    })
+}
+
+#[test]
+fn it_accepts_effective_worker_change_trigger() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial block for events
+        System::set_block_number(1);
+
+        // set initial pending_worker request
+        let new_worker: u64 = 99;
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_worker,
+            None
+        ));
+
+        System::set_block_number(10);
+
+        assert_ok!(Miner::confirm_update_worker_key(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+        ));
+
+        let new_miner_info = Miner::miners(FIRST_MINER_ADDR).unwrap();
+
+        assert_eq!(new_miner_info.worker, new_worker);
+        assert!(new_miner_info.pending_worker.is_none());
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::WorkerChanged(
+                FIRST_MINER_ADDR,
+                new_worker,
+            ))
+        )
+    })
+}
+
+#[test]
+fn it_rejects_trigger_before_effective_at() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial block for events
+        System::set_block_number(1);
+
+        // set initial pending_worker request
+        let new_worker: u64 = 99;
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_worker,
+            None
+        ));
+
+        System::set_block_number(<Test as pallet_miner::Config>::BlockDelay::get());
+
+        assert_noop!(
+            Miner::confirm_update_worker_key(Origin::signed(owner), FIRST_MINER_ADDR,),
+            Error::<Test>::IneffectiveRequest
+        );
+    })
+}
+
+#[test]
+fn it_rejects_trigger_without_request() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        assert_noop!(
+            Miner::confirm_update_worker_key(Origin::signed(owner), FIRST_MINER_ADDR,),
+            Error::<Test>::NoRequest
+        );
+    })
 }

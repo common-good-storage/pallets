@@ -25,6 +25,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type Power: Power;
+        type BlockDelay: Get<BlockNumberFor<Self>>;
     }
 
     #[pallet::pallet]
@@ -55,6 +56,7 @@ pub mod pallet {
         MinerCreated(MinerAccountId<T>),
         /// Emits miner address, requested change in worker address and controllers address update
         WorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
+        NoWorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
         /// Emits miner address and new worker address
         WorkerChanged(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new PeerId to update to
@@ -71,6 +73,8 @@ pub mod pallet {
         ClaimsNotSet,
         NoSuchMiner,
         InvalidSigner,
+        NoRequest,
+        IneffectiveRequest,
     }
 
     #[pallet::call]
@@ -123,29 +127,34 @@ pub mod pallet {
             new_controllers: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L225
-            // ChangeWorkerAddress will ALWAYS overwrite the existing control addresses with the control addresses passed in the params.
-            // If a None is passed, the control addresses will be cleared.
-            // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
 
             let signer = ensure_signed(origin)?;
             let mut miner_info =
                 Miners::<T>::try_get(&miner).map_err(|_| Error::<T>::NoSuchMiner)?;
 
+            // Ensure that the caller is the owner of the miner to make any updates
             ensure!(signer == miner_info.owner, Error::<T>::InvalidSigner);
 
-            miner_info.controllers = new_controllers;
+            // From filecoin miner_actor impl: ChangeWorkerAddress will ALWAYS overwrite the existing control addresses
+            // with the control addresses passed in the params.
+            miner_info.controllers = new_controllers.clone();
 
-            miner_info.pending_worker = Some(WorkerKeyChange {
-                new_worker: new_worker.clone(),
-                effective_at: <frame_system::Module<T>>::block_number() + (5_u32).into(),
-            });
+            // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
+            if miner_info.worker != new_worker {
+                miner_info.pending_worker = Some(WorkerKeyChange {
+                    new_worker: new_worker.clone(),
+                    effective_at: <frame_system::Module<T>>::block_number() + T::BlockDelay::get(),
+                });
+            } else {
+                miner_info.pending_worker = None;
+            }
 
+            Miners::<T>::insert(&miner, miner_info);
             Self::deposit_event(Event::WorkerChangeRequested(
                 miner,
                 new_worker,
-                miner_info.controllers,
+                new_controllers,
             ));
-
             Ok(().into())
         }
 
@@ -163,13 +172,31 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn confirm_update_worker_key(
-            _origin: OriginFor<T>,
-            _miner: MinerAccountId<T>,
+            origin: OriginFor<T>,
+            miner: MinerAccountId<T>,
         ) -> DispatchResultWithPostInfo {
-            // triggers a change in new worker key if it was previously set and the activation time
-            // has arrived
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L205
-            unimplemented!()
+
+            // Allow any paying accounts to trigger the change set by owner
+            ensure_signed(origin)?;
+
+            Miners::<T>::try_mutate(&miner, |maybe_miner_info| -> DispatchResultWithPostInfo {
+                let miner_info = maybe_miner_info.as_mut().ok_or(Error::<T>::NoSuchMiner)?;
+                if let Some(key_change) = &miner_info.pending_worker {
+                    // Can only change to new_worker addr after effective_at block number
+                    if key_change.effective_at <= <frame_system::Module<T>>::block_number() {
+                        let new_worker = key_change.new_worker.clone();
+                        miner_info.worker = new_worker.clone();
+                        miner_info.pending_worker = None;
+                        Self::deposit_event(Event::WorkerChanged(miner.clone(), new_worker));
+                        Ok(().into())
+                    } else {
+                        Err(Error::<T>::IneffectiveRequest.into())
+                    }
+                } else {
+                    Err(Error::<T>::NoRequest.into())
+                }
+            })
         }
 
         // Benchmark not accurate
@@ -211,7 +238,7 @@ pub struct MinerInfo<
     pending_owner: Option<AccountId>,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Debug)]
 pub struct WorkerKeyChange<
     AccountId: Encode + Decode + Eq + PartialEq,
     BlockNumber: Encode + Decode + Eq + PartialEq,
