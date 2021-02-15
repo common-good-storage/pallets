@@ -55,7 +55,11 @@ pub mod pallet {
         /// Emits new miner address
         MinerCreated(MinerAccountId<T>),
         /// Emits miner address, requested change in worker address and controllers address update
-        WorkerChangeRequested(MinerAccountId<T>, T::AccountId, Option<Vec<T::AccountId>>),
+        WorkerChangeRequested(
+            MinerAccountId<T>,
+            T::AccountId,
+            MinerControllers<T::AccountId>,
+        ),
         /// Emits miner address and new worker address
         WorkerChanged(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new PeerId to update to
@@ -105,7 +109,7 @@ pub mod pallet {
             let miner_info = MinerInfo {
                 owner,
                 worker,
-                controllers: None,
+                controllers: Vec::new(),
                 peer_id,
                 pending_worker: None,
                 pending_owner: None,
@@ -123,7 +127,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             miner: MinerAccountId<T>,
             new_worker: T::AccountId,
-            new_controllers: Option<Vec<T::AccountId>>,
+            new_controllers: MinerControllers<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L225
 
@@ -134,9 +138,12 @@ pub mod pallet {
             // Ensure that the caller is the owner of the miner to make any updates
             ensure!(signer == miner_info.owner, Error::<T>::InvalidSigner);
 
-            // From filecoin miner_actor impl: ChangeWorkerAddress will ALWAYS overwrite the existing control addresses
-            // with the control addresses passed in the params.
-            miner_info.controllers = new_controllers.clone();
+            // This is different from filecoin miner_actor impl where ChangeWorkerAddress will ALWAYS overwrite the existing control addresses
+            // with the control addresses passed in the params. Instead we match MinerControllers
+            // Variant here
+            if let MinerControllers::Override(controllers) = new_controllers.clone() {
+                miner_info.controllers = controllers;
+            }
 
             // A worker change will be scheduled if the worker passed in the params is different from the existing worker.
             if miner_info.worker != new_worker {
@@ -228,7 +235,7 @@ pub struct MinerInfo<
     /// Used to sign messages (and in the future blocks) on behalf of the miner
     worker: AccountId,
     /// Other addresses that can sign messages on behalf of the miner
-    controllers: Option<Vec<AccountId>>,
+    controllers: Vec<AccountId>,
     /// Miner's libp2p PeerId
     peer_id: PeerId,
     /// Update to this worker address to at defined time
@@ -246,4 +253,12 @@ pub struct WorkerKeyChange<
     new_worker: AccountId,
     /// Time after which confirm_update_worker_key will trigger updates to MinerInfo
     effective_at: BlockNumber,
+}
+
+#[derive(Encode, Decode, Debug, PartialEq, Clone)]
+pub enum MinerControllers<AccountId> {
+    /// Miner controller accounts should be set as follows
+    Override(Vec<AccountId>),
+    /// Miner controller accounts should not change
+    NoChange,
 }

@@ -1,7 +1,7 @@
 // Imports created by construct_runtime macros are unresolved by rust analyzer
 use crate as pallet_miner;
 use crate::mock::{new_test_ext, Event, Miner, Origin, System, Test};
-use crate::{AccountIdConversion, Error, MinerId};
+use crate::{AccountIdConversion, Error, MinerControllers, MinerId};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResultWithPostInfo};
 
 const WORKER: u64 = 33;
@@ -54,7 +54,9 @@ fn create_miner() {
         assert_eq!(new_miner_info.owner, owner);
         assert_eq!(new_miner_info.worker, worker);
         assert_eq!(new_miner_info.peer_id, peer_id);
+        assert_eq!(new_miner_info.controllers.len(), 0);
         assert_eq!(System::event_count(), 1);
+
         assert_eq!(
             System::events()
                 .pop()
@@ -76,7 +78,7 @@ fn it_creates_worker_change_request_with_valid_signer_and_new_worker() {
         System::set_block_number(block);
 
         let new_worker: u64 = 99;
-        let new_controllers = Some(vec![1, 2, 3]);
+        let new_controllers = MinerControllers::Override(vec![1, 2, 3]);
         assert_ok!(Miner::change_worker_address(
             Origin::signed(owner),
             FIRST_MINER_ADDR,
@@ -120,7 +122,7 @@ fn it_clears_worker_change_request_with_valid_signer_and_old_worker() {
             Origin::signed(owner),
             FIRST_MINER_ADDR,
             new_worker,
-            None
+            MinerControllers::NoChange
         ));
 
         // clears existing pending_worker request with existing worker
@@ -128,13 +130,44 @@ fn it_clears_worker_change_request_with_valid_signer_and_old_worker() {
             Origin::signed(owner),
             FIRST_MINER_ADDR,
             WORKER,
-            None
+            MinerControllers::NoChange
         ));
 
         assert!(Miner::miners(FIRST_MINER_ADDR)
             .unwrap()
             .pending_worker
             .is_none());
+    })
+}
+
+#[test]
+fn no_change_to_controllers_without_override() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        // set initial pending_worker request
+        let new_worker: u64 = 99;
+        let new_controllers = vec![1, 2, 3];
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_worker,
+            MinerControllers::Override(new_controllers.clone())
+        ));
+
+        // clears existing pending_worker request with existing worker
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            WORKER,
+            MinerControllers::NoChange
+        ));
+
+        assert_eq!(
+            Miner::miners(FIRST_MINER_ADDR).unwrap().controllers,
+            new_controllers
+        );
     })
 }
 
@@ -154,7 +187,7 @@ fn it_rejects_worker_change_request_with_invalid_signer() {
                 Origin::signed(invalid_signer),
                 FIRST_MINER_ADDR,
                 WORKER,
-                None
+                MinerControllers::NoChange
             ),
             Error::<Test>::InvalidSigner
         );
@@ -176,7 +209,7 @@ fn it_accepts_effective_worker_change_trigger() {
             Origin::signed(owner),
             FIRST_MINER_ADDR,
             new_worker,
-            None
+            MinerControllers::NoChange
         ));
 
         System::set_block_number(10);
@@ -218,7 +251,7 @@ fn it_rejects_trigger_before_effective_at() {
             Origin::signed(owner),
             FIRST_MINER_ADDR,
             new_worker,
-            None
+            MinerControllers::NoChange
         ));
 
         System::set_block_number(<Test as pallet_miner::Config>::BlockDelay::get());
