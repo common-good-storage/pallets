@@ -71,8 +71,6 @@ pub mod pallet {
         OwnerChangeRequested(MinerAccountId<T>, T::AccountId),
         /// Emits miner address and new owner address
         OwnerChanged(MinerAccountId<T>, T::AccountId),
-        /// Emits miner address
-        InvalidOwnerChangeRequest(MinerAccountId<T>),
     }
 
     #[pallet::error]
@@ -172,12 +170,20 @@ pub mod pallet {
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
-            _origin: OriginFor<T>,
-            _miner: MinerAccountId<T>,
-            _new_peer_id: PeerId<T>,
+            origin: OriginFor<T>,
+            miner: MinerAccountId<T>,
+            new_peer_id: PeerId<T>,
         ) -> DispatchResultWithPostInfo {
             // following https://github.com/filecoin-project/specs-actors/blob/57195d8909b1c366fd1af41de9e92e11d7876177/actors/builtin/miner/miner_actor.go#L266
-            unimplemented!()
+
+            let signer = ensure_signed(origin)?;
+            Miners::<T>::try_mutate(&miner, |maybe_miner_info| -> DispatchResultWithPostInfo {
+                let miner_info = maybe_miner_info.as_mut().ok_or(Error::<T>::NoSuchMiner)?;
+                ensure!(signer == miner_info.owner, Error::<T>::InvalidSigner);
+                miner_info.peer_id = new_peer_id.clone();
+                Self::deposit_event(Event::PeerIdChanged(miner.clone(), new_peer_id));
+                Ok(().into())
+            })
         }
 
         // Benchmark not accurate
@@ -251,17 +257,21 @@ pub mod pallet {
                         Miners::<T>::insert(miner.clone(), miner_info);
                         Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
                     } else {
-                        Self::deposit_event(Event::<T>::InvalidOwnerChangeRequest(miner));
+                        return Err(Error::<T>::InvalidSigner.into());
                     }
                 }
                 // Create new proposal by current owner for new owner
                 None => {
-                    if signer == miner_info.owner && new_owner != miner_info.owner {
-                        miner_info.pending_owner = Some(new_owner.clone());
-                        Miners::<T>::insert(miner.clone(), miner_info);
-                        Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
+                    if signer == miner_info.owner {
+                        if new_owner != miner_info.owner {
+                            miner_info.pending_owner = Some(new_owner.clone());
+                            Miners::<T>::insert(miner.clone(), miner_info);
+                            Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
+                        } else {
+                            return Err(Error::<T>::IneffectiveRequest.into());
+                        }
                     } else {
-                        Self::deposit_event(Event::<T>::InvalidOwnerChangeRequest(miner));
+                        return Err(Error::<T>::InvalidSigner.into());
                     }
                 }
             }
