@@ -223,7 +223,6 @@ pub mod pallet {
             miner: MinerAccountId<T>,
             new_owner: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            // Proposes or confirms a change of owner address.
             // If invoked by the current owner, proposes a new owner address for confirmation. If the proposed address is the
             // current owner address, revokes any existing proposal.
             // If invoked by the previously proposed address, with the same proposal, changes the current owner address to be
@@ -263,6 +262,7 @@ pub mod pallet {
                 // Create new proposal by current owner for new owner
                 None => {
                     if signer == miner_info.owner {
+                        // Do not set pending owner if new_owner is current owner
                         if new_owner != miner_info.owner {
                             miner_info.pending_owner = Some(new_owner.clone());
                             Miners::<T>::insert(miner.clone(), miner_info);
