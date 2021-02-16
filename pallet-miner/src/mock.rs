@@ -58,10 +58,14 @@ impl pallet_power::Config for Test {
     type StoragePower = u128;
 }
 
+parameter_types! {
+    pub BlockDelay: u64 = 5;
+}
+
 impl pallet_miner::Config for Test {
     type Event = Event;
-    type BlockNumber = u64;
     type Power = Power;
+    type BlockDelay = BlockDelay;
 }
 
 // Build genesis storage according to the mock runtime.
