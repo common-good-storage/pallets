@@ -7,19 +7,22 @@ mod tests;
 mod mock;
 
 use codec::{Decode, Encode};
-use pallet_common::{AccountIdConversion, MinerId, Power};
 
 // `pallet::Module` is created by `pallet` macro
 pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
 
-pub type MinerAccountId<T> = <<T as Config>::Power as Power>::AccountId;
-pub type PeerId<T> = <<T as Config>::Power as Power>::PeerId;
-
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_system::pallet_prelude::*;
+    use super::{MinerControllers, MinerInfo, WorkerKeyChange};
+    use frame_support::pallet_prelude::{
+        ensure, Blake2_128Concat, DispatchResultWithPostInfo, Get, Hooks, IsType, PhantomData,
+        StorageMap, StorageValue,
+    };
+    use frame_system::pallet_prelude::{ensure_signed, BlockNumberFor, OriginFor};
+
+    use pallet_common::{AccountIdConversion, MinerId, Power};
+    pub type MinerAccountId<T> = <<T as Config>::Power as Power>::AccountId;
+    pub type PeerId<T> = <<T as Config>::Power as Power>::PeerId;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
