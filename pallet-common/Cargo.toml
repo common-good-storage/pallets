@@ -7,8 +7,8 @@ description = "Common types and traits for Actors"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "rococo-v1"}
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 [features]
 default = ['std']
