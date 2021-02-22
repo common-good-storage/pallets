@@ -243,7 +243,7 @@ pub mod pallet {
                     Self::deposit_event(Event::<T>::OwnerChanged(miner, new_owner));
                 }
                 Some(_) if signer == miner_info.owner && signer == new_owner => {
-                    // Revokes current
+                    // Existing owner cancels the ownership change
                     miner_info.pending_owner = None;
                     Miners::<T>::insert(miner.clone(), miner_info);
                     Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
