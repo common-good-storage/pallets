@@ -19,7 +19,7 @@ fn create_miner_for(
 }
 
 #[test]
-fn first_miner_addr_is_correct() {
+fn create_miner_first_miner_addr_is_correct() {
     new_test_ext().execute_with(|| {
         let new_miner_addr: <Test as frame_system::Config>::AccountId = MinerId(1).into_account();
         assert_eq!(new_miner_addr, FIRST_MINER_ADDR);
@@ -69,7 +69,7 @@ fn create_miner() {
 }
 
 #[test]
-fn it_creates_worker_change_request_with_valid_signer_and_new_worker() {
+fn change_worker_address_works_with_valid_signer_and_new_worker() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -112,7 +112,7 @@ fn it_creates_worker_change_request_with_valid_signer_and_new_worker() {
 }
 
 #[test]
-fn it_clears_worker_change_request_with_valid_signer_and_old_worker() {
+fn change_worker_address_clears_pending_worker_with_valid_signer_and_old_worker() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -142,7 +142,7 @@ fn it_clears_worker_change_request_with_valid_signer_and_old_worker() {
 }
 
 #[test]
-fn no_change_to_controllers_without_override() {
+fn change_worker_address_keeps_old_controller_without_override() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -173,7 +173,7 @@ fn no_change_to_controllers_without_override() {
 }
 
 #[test]
-fn it_rejects_worker_change_request_with_invalid_signer() {
+fn change_worker_address_rejects_invalid_signer() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -196,7 +196,7 @@ fn it_rejects_worker_change_request_with_invalid_signer() {
 }
 
 #[test]
-fn it_accepts_effective_worker_change_trigger() {
+fn confirm_update_worker_accepts_effective_request_with_valid_signature() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -238,7 +238,7 @@ fn it_accepts_effective_worker_change_trigger() {
 }
 
 #[test]
-fn it_rejects_trigger_before_effective_at() {
+fn confirm_update_worker_key_rejects_trigger_before_effective_at() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -265,7 +265,7 @@ fn it_rejects_trigger_before_effective_at() {
 }
 
 #[test]
-fn it_rejects_trigger_without_request() {
+fn change_worker_address_rejects_trigger_without_request() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         assert_ok!(create_miner_for(owner));
@@ -275,4 +275,201 @@ fn it_rejects_trigger_without_request() {
             Error::<Test>::NoRequest
         );
     })
+}
+
+#[test]
+fn change_owner_address_creates_proposal_with_valid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_owner: u64 = 234;
+        assert_ok!(create_miner_for(owner));
+
+        System::set_block_number(1);
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_owner
+        ));
+
+        assert_eq!(
+            Miner::miners(FIRST_MINER_ADDR).unwrap().pending_owner,
+            Some(new_owner)
+        );
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::OwnerChangeRequested(
+                FIRST_MINER_ADDR,
+                new_owner,
+            ))
+        )
+    })
+}
+
+#[test]
+fn change_owner_address_rejects_proposal_with_owner_account() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        assert_ok!(create_miner_for(owner));
+
+        assert_noop!(
+            Miner::change_owner_address(Origin::signed(owner), FIRST_MINER_ADDR, owner,),
+            Error::<Test>::IneffectiveRequest
+        );
+    })
+}
+
+#[test]
+fn change_owner_address_rejects_invalid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_owner: u64 = 234;
+        let random_account: u64 = 789;
+        assert_ok!(create_miner_for(owner));
+
+        assert_noop!(
+            Miner::change_owner_address(
+                Origin::signed(random_account),
+                FIRST_MINER_ADDR,
+                new_owner
+            ),
+            Error::<Test>::InvalidSigner
+        );
+    })
+}
+
+#[test]
+fn change_owner_address_confirms_new_owner_with_valid_signer_and_proposal() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_owner: u64 = 234;
+        assert_ok!(create_miner_for(owner));
+
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_owner
+        ));
+
+        System::set_block_number(1);
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(new_owner),
+            FIRST_MINER_ADDR,
+            new_owner
+        ));
+
+        assert_eq!(Miner::miners(FIRST_MINER_ADDR).unwrap().owner, new_owner);
+        assert_eq!(Miner::miners(FIRST_MINER_ADDR).unwrap().pending_owner, None);
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::OwnerChanged(
+                FIRST_MINER_ADDR,
+                new_owner,
+            ))
+        )
+    })
+}
+
+#[test]
+fn change_owner_address_revokes_existing_proposal_with_valid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_owner: u64 = 234;
+        assert_ok!(create_miner_for(owner));
+
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_owner
+        ));
+
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_owner
+        ));
+
+        assert_eq!(
+            Miner::miners(FIRST_MINER_ADDR).unwrap().pending_owner,
+            Some(new_owner)
+        );
+
+        System::set_block_number(1);
+
+        assert_ok!(Miner::change_owner_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            owner
+        ));
+
+        assert_eq!(Miner::miners(FIRST_MINER_ADDR).unwrap().owner, owner);
+        assert_eq!(Miner::miners(FIRST_MINER_ADDR).unwrap().pending_owner, None);
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::OwnerChangeRequested(
+                FIRST_MINER_ADDR,
+                owner,
+            ))
+        )
+    })
+}
+
+#[test]
+fn change_peer_id_works_with_valid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_peer_id = vec![88];
+        assert_ok!(create_miner_for(owner));
+
+        // set initial block for events and calculation for effective_at
+        let block = 1;
+        System::set_block_number(block);
+
+        assert_ok!(Miner::change_peer_id(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            new_peer_id.clone()
+        ));
+
+        let peer_id = Miner::miners(FIRST_MINER_ADDR).unwrap().peer_id;
+
+        assert_eq!(peer_id, new_peer_id);
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::PeerIdChanged(
+                FIRST_MINER_ADDR,
+                new_peer_id
+            ))
+        )
+    });
+}
+
+#[test]
+fn change_peer_id_rejects_invalid_signer() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let invalid_signer: u64 = 234;
+        let new_peer_id = vec![88];
+
+        assert_ok!(create_miner_for(owner));
+        assert_noop!(
+            Miner::change_peer_id(
+                Origin::signed(invalid_signer),
+                FIRST_MINER_ADDR,
+                new_peer_id
+            ),
+            Error::<Test>::InvalidSigner
+        );
+    });
 }
