@@ -36,4 +36,5 @@ std = [
     "frame-system/std",
     "pallet-common/std",
     "sp-runtime/std",
+    "sp-std/std",
 ]
