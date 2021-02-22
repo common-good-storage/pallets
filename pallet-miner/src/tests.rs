@@ -461,12 +461,8 @@ fn change_peer_id_rejects_invalid_signer() {
         let owner: u64 = 123;
         let invalid_signer: u64 = 234;
         let new_peer_id = vec![88];
+
         assert_ok!(create_miner_for(owner));
-
-        // set initial block for events and calculation for effective_at
-        let block = 1;
-        System::set_block_number(block);
-
         assert_noop!(
             Miner::change_peer_id(
                 Origin::signed(invalid_signer),

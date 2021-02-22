@@ -167,6 +167,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        // TODO: change_peer_id shoud allow worker and controllers to perform such update
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
@@ -233,46 +234,45 @@ pub mod pallet {
             let mut miner_info =
                 Miners::<T>::try_get(&miner).map_err(|_| Error::<T>::NoSuchMiner)?;
 
-            match miner_info.pending_owner.clone() {
-                // Proposal already exists
-                Some(proposed_owner) => {
-                    // The input proposal is same as the existing one
-                    if new_owner == proposed_owner {
-                        // New owner confirms proposed
-                        if signer == proposed_owner {
-                            miner_info.owner = signer;
-                            miner_info.pending_owner = None;
-                            Miners::<T>::insert(miner.clone(), miner_info);
-                            Self::deposit_event(Event::<T>::OwnerChanged(miner, new_owner));
-                        }
-                    } else if signer == miner_info.owner {
-                        if new_owner == signer {
-                            // Revokes current
-                            miner_info.pending_owner = None;
-                        } else {
-                            // Override existing proposal
-                            miner_info.pending_owner = Some(new_owner.clone());
-                        }
-                        Miners::<T>::insert(miner.clone(), miner_info);
-                        Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
-                    } else {
-                        return Err(Error::<T>::InvalidSigner.into());
-                    }
+            match miner_info.pending_owner {
+                Some(proposed_owner) if new_owner == proposed_owner && signer == proposed_owner => {
+                    // New owner confirms proposed
+                    miner_info.owner = signer;
+                    miner_info.pending_owner = None;
+                    Miners::<T>::insert(miner.clone(), miner_info);
+                    Self::deposit_event(Event::<T>::OwnerChanged(miner, new_owner));
                 }
-                // Create new proposal by current owner for new owner
-                None => {
-                    if signer == miner_info.owner {
-                        // Do not set pending owner if new_owner is current owner
-                        if new_owner != miner_info.owner {
-                            miner_info.pending_owner = Some(new_owner.clone());
-                            Miners::<T>::insert(miner.clone(), miner_info);
-                            Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
-                        } else {
-                            return Err(Error::<T>::IneffectiveRequest.into());
-                        }
-                    } else {
-                        return Err(Error::<T>::InvalidSigner.into());
-                    }
+                Some(_) if signer == miner_info.owner && signer == new_owner => {
+                    // Revokes current
+                    miner_info.pending_owner = None;
+                    Miners::<T>::insert(miner.clone(), miner_info);
+                    Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
+                }
+                Some(_) if signer == miner_info.owner => {
+                    // Override existing proposal
+                    miner_info.pending_owner = Some(new_owner.clone());
+                    Miners::<T>::insert(miner.clone(), miner_info);
+                    Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
+                }
+                None if signer == miner_info.owner && new_owner == miner_info.owner => {
+                    // Attempted to change ownership to themselves
+                    return Err(Error::<T>::IneffectiveRequest.into());
+                }
+                None if signer == miner_info.owner => {
+                    // Initiate ownership transfer of the miner
+                    miner_info.pending_owner = Some(new_owner.clone());
+                    Miners::<T>::insert(miner.clone(), miner_info);
+                    Self::deposit_event(Event::<T>::OwnerChangeRequested(miner, new_owner));
+                }
+                Some(_) | None => {
+                    let is_current_owner = signer == miner_info.owner;
+                    let is_proposed_owner = miner_info
+                        .pending_owner
+                        .map(|po| po == signer)
+                        .unwrap_or(false);
+
+                    assert!(!is_current_owner && !is_proposed_owner);
+                    return Err(Error::<T>::InvalidSigner.into());
                 }
             }
 
