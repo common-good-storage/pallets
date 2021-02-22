@@ -2,7 +2,7 @@
 edition = '2018'
 name = 'pallet-common'
 version = "0.1.0"
-license = "Unlicense"
+license = "MIT OR Apache-2.0"
 description = "Common types and traits for Actors"
 
 [dependencies]
