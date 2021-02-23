@@ -7,13 +7,14 @@ mod tests;
 mod mock;
 
 use codec::{Decode, Encode};
+pub use sp_std::vec::Vec;
 
 // `pallet::Module` is created by `pallet` macro
 pub use pallet::{Config, Error, Event, MinerIndex, Miners, Module, Pallet};
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::{MinerControllers, MinerInfo, WorkerKeyChange};
+    use super::{MinerControllers, MinerInfo, Vec, WorkerKeyChange};
     use frame_support::pallet_prelude::{
         ensure, Blake2_128Concat, DispatchResultWithPostInfo, Get, Hooks, IsType, PhantomData,
         StorageMap, StorageValue,
