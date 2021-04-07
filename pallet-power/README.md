@@ -1,18 +1,20 @@
-# Pallet Power 
+# Pallet Power
 
 ## Purpose
 
-This pallet implements the Power Actor
+This pallet implements some of the [Power Actor] interfaces from the Filecoin protocol.
+
+[Power Actor]: https://github.com/filecoin-project/specs-actors/tree/master/actors/builtin/power
 
 ## Dependencies
 
 ### Traits
 
-TODO: This pallet does not depend on any externally defined traits.
+This pallet does not depend on any externally defined traits.
 
 ### Pallets
 
-TODO: This pallet does not depend on any other FRAME pallet or externally developed modules.
+This pallet depends on `pallet_common` from this repository which shares types between different pallets.
 
 ## Installation
 
@@ -21,9 +23,10 @@ TODO: This pallet does not depend on any other FRAME pallet or externally develo
 TODO: To add this pallet to your runtime, simply include the following to your runtime's `Cargo.toml` file:
 
 ```TOML
-[dependencies.substrate-pallet-template]
-default_features = false
-git = 'https://github.com/substrate-developer-hub/substrate-pallet-template.git'
+[dependencies.pallet-power]
+default-features = false
+package = 'pallet-power'
+git = 'https://github.com/common-good-storage/pallets'
 ```
 
 and update your runtime's `std` feature to include this pallet:
@@ -31,36 +34,36 @@ and update your runtime's `std` feature to include this pallet:
 ```TOML
 std = [
     # --snip--
-    'example_pallet/std',
+    'pallet_power/std',
 ]
 ```
 
 ### Runtime `lib.rs`
 
-TODO: You should implement it's trait like so:
+You should implement it's trait like so:
 
 ```rust
-/// Used for test_module
-impl example_pallet::Trait for Runtime {
-	type Event = Event;
+impl pallet_power::Config for Runtime {
+    type PeerId = Vec<u8>;
+    type StoragePower = u128;
 }
 ```
 
 and include it in your `construct_runtime!` macro:
 
 ```rust
-ExamplePallet: substrate_pallet_template::{Module, Call, Storage, Event<T>},
+ Power: pallet_power::{Module, Storage},
 ```
 
 ### Genesis Configuration
 
-TODO: This template pallet does not have any genesis configuration.
+This template pallet does not have any genesis configuration.
 
 ## Reference Docs
 
 You can view the reference docs for this pallet by running:
 
-```
+```sh
 cargo doc --open
 ```
 

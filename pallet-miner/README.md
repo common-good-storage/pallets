@@ -1,4 +1,4 @@
-# Pallet Miner 
+# Pallet Miner
 
 ## Purpose
 
@@ -8,22 +8,23 @@ This pallet implements the Miner Actor
 
 ### Traits
 
-TODO: This pallet does not depend on any externally defined traits.
+This pallet depends on the `Power` trait from `pallet_commmon`
 
 ### Pallets
 
-TODO: This pallet does not depend on any other FRAME pallet or externally developed modules.
+This pallet depends on `pallet_common` from this repository which shares types between different pallets.
 
 ## Installation
 
 ### Runtime `Cargo.toml`
 
-TODO: To add this pallet to your runtime, simply include the following to your runtime's `Cargo.toml` file:
+To add this pallet to your runtime, simply include the following to your runtime's `Cargo.toml` file:
 
 ```TOML
-[dependencies.substrate-pallet-template]
-default_features = false
-git = 'https://github.com/substrate-developer-hub/substrate-pallet-template.git'
+[dependencies.pallet-miner]
+default-features = false
+package = 'pallet-miner'
+git = 'https://github.com/common-good-storage/pallets'
 ```
 
 and update your runtime's `std` feature to include this pallet:
@@ -31,36 +32,43 @@ and update your runtime's `std` feature to include this pallet:
 ```TOML
 std = [
     # --snip--
-    'example_pallet/std',
+    'pallet_miner/std',
 ]
 ```
 
 ### Runtime `lib.rs`
 
-TODO: You should implement it's trait like so:
+You should implement it's trait like so:
 
 ```rust
-/// Used for test_module
-impl example_pallet::Trait for Runtime {
-	type Event = Event;
+parameter_types! {
+    pub BlockDelay: BlockNumber = 5;
 }
+
+impl pallet_miner::Config for Runtime {
+    type Event = Event;
+    type Power = Power;
+    type BlockDelay = BlockDelay;
+}
+
 ```
 
 and include it in your `construct_runtime!` macro:
 
 ```rust
-ExamplePallet: substrate_pallet_template::{Module, Call, Storage, Event<T>},
+        Miner: pallet_miner::{Module, Call, Storage, Event<T>},
+
 ```
 
 ### Genesis Configuration
 
-TODO: This template pallet does not have any genesis configuration.
+This template pallet does not have any genesis configuration.
 
 ## Reference Docs
 
 You can view the reference docs for this pallet by running:
 
-```
+```sh
 cargo doc --open
 ```
 
