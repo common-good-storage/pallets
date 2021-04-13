@@ -34,7 +34,7 @@ and update your runtime's `std` feature to include this pallet:
 ```TOML
 std = [
     # --snip--
-    'pallet_power/std',
+    'pallet-power/std',
 ]
 ```
 
