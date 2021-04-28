@@ -429,9 +429,7 @@ fn change_peer_id_works_with_valid_owner() {
         let new_peer_id = vec![88];
         assert_ok!(create_miner_for(owner));
 
-        // set initial block for events and calculation for effective_at
-        let block = 1;
-        System::set_block_number(block);
+        System::set_block_number(1);
 
         assert_ok!(Miner::change_peer_id(
             Origin::signed(owner),
@@ -462,9 +460,7 @@ fn change_peer_id_works_with_valid_worker() {
         let new_peer_id = vec![88];
         assert_ok!(create_miner_for(owner));
 
-        // set initial block for events and calculation for effective_at
-        let block = 1;
-        System::set_block_number(block);
+        System::set_block_number(1);
 
         assert_ok!(Miner::change_peer_id(
             Origin::signed(WORKER),
@@ -503,9 +499,8 @@ fn change_peer_id_works_with_valid_controller() {
             WORKER,
             MinerControllers::Override(new_controllers.clone())
         ));
-        // set initial block for events and calculation for effective_at
-        let block = 1;
-        System::set_block_number(block);
+
+        System::set_block_number(1);
 
         assert_ok!(Miner::change_peer_id(
             Origin::signed(new_controllers[0]),
