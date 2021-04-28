@@ -168,7 +168,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // TODO: change_peer_id shoud allow worker and controllers to perform such update
         // Benchmark not accurate
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn change_peer_id(
@@ -181,7 +180,15 @@ pub mod pallet {
             let signer = ensure_signed(origin)?;
             Miners::<T>::try_mutate(&miner, |maybe_miner_info| -> DispatchResultWithPostInfo {
                 let miner_info = maybe_miner_info.as_mut().ok_or(Error::<T>::NoSuchMiner)?;
-                ensure!(signer == miner_info.owner, Error::<T>::InvalidSigner);
+                ensure!(
+                    signer == miner_info.owner
+                        || signer == miner_info.worker
+                        || miner_info
+                            .controllers
+                            .iter()
+                            .any(|account| account == &signer),
+                    Error::<T>::InvalidSigner
+                );
                 miner_info.peer_id = new_peer_id.clone();
                 Self::deposit_event(Event::PeerIdChanged(miner.clone(), new_peer_id));
                 Ok(().into())
@@ -293,7 +300,8 @@ pub struct MinerInfo<
     /// Worker of this Miner
     /// Used to sign messages (and in the future blocks) on behalf of the miner
     worker: AccountId,
-    /// Other addresses that can sign messages on behalf of the miner
+    /// Other addresses that can sign messages on behalf of the miner,
+    /// a limit for max number of controllers to be added
     controllers: Vec<AccountId>,
     /// Miner's libp2p PeerId
     peer_id: PeerId,

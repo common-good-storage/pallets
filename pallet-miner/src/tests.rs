@@ -423,15 +423,13 @@ fn change_owner_address_revokes_existing_proposal_with_valid_signer() {
 }
 
 #[test]
-fn change_peer_id_works_with_valid_signer() {
+fn change_peer_id_works_with_valid_owner() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
         let new_peer_id = vec![88];
         assert_ok!(create_miner_for(owner));
 
-        // set initial block for events and calculation for effective_at
-        let block = 1;
-        System::set_block_number(block);
+        System::set_block_number(1);
 
         assert_ok!(Miner::change_peer_id(
             Origin::signed(owner),
@@ -456,9 +454,81 @@ fn change_peer_id_works_with_valid_signer() {
 }
 
 #[test]
+fn change_peer_id_works_with_valid_worker() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_peer_id = vec![88];
+        assert_ok!(create_miner_for(owner));
+
+        System::set_block_number(1);
+
+        assert_ok!(Miner::change_peer_id(
+            Origin::signed(WORKER),
+            FIRST_MINER_ADDR,
+            new_peer_id.clone()
+        ));
+
+        let peer_id = Miner::miners(FIRST_MINER_ADDR).unwrap().peer_id;
+
+        assert_eq!(peer_id, new_peer_id);
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::PeerIdChanged(
+                FIRST_MINER_ADDR,
+                new_peer_id
+            ))
+        )
+    });
+}
+
+#[test]
+fn change_peer_id_works_with_valid_controller() {
+    new_test_ext().execute_with(|| {
+        let owner: u64 = 123;
+        let new_peer_id = vec![88];
+        let new_controllers = vec![1, 2, 3];
+        assert_ok!(create_miner_for(owner));
+
+        // Add controllers to new miner
+        assert_ok!(Miner::change_worker_address(
+            Origin::signed(owner),
+            FIRST_MINER_ADDR,
+            WORKER,
+            MinerControllers::Override(new_controllers.clone())
+        ));
+
+        System::set_block_number(1);
+
+        assert_ok!(Miner::change_peer_id(
+            Origin::signed(new_controllers[0]),
+            FIRST_MINER_ADDR,
+            new_peer_id.clone()
+        ));
+
+        let peer_id = Miner::miners(FIRST_MINER_ADDR).unwrap().peer_id;
+
+        assert_eq!(peer_id, new_peer_id);
+        assert_eq!(
+            System::events()
+                .pop()
+                .map(|e| e.event)
+                .expect("EventRecord should have event field"),
+            Event::pallet_miner(pallet_miner::Event::PeerIdChanged(
+                FIRST_MINER_ADDR,
+                new_peer_id
+            ))
+        )
+    });
+}
+
+#[test]
 fn change_peer_id_rejects_invalid_signer() {
     new_test_ext().execute_with(|| {
         let owner: u64 = 123;
+        // This signer is not the owner, worker or a controller of the miner
         let invalid_signer: u64 = 234;
         let new_peer_id = vec![88];
 
